@@ -6,7 +6,9 @@ import { prismaClient } from "@repo/db/client";
 
 
 
+
 const wss = new WebSocketServer({ port: 8080 });
+
 
 
 
@@ -20,7 +22,9 @@ interface User {
 
 
 
+
 const users: User[] = [];
+
 
 
 
@@ -32,9 +36,11 @@ function checkUser(token: string): string | null {
 
 
 
+
         if (typeof decoded === "string" || !decoded || !decoded.userId) {
             return null;
         }
+
 
 
 
@@ -49,13 +55,16 @@ function checkUser(token: string): string | null {
 
 
 
+
 wss.on('connection', function connection(ws, request) {
     const url = request.url;
 
 
 
 
+
     console.log("📡 New connection attempt");
+
 
 
 
@@ -69,7 +78,9 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
     let userId: string | null = null;
+
 
 
 
@@ -81,7 +92,9 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
         console.log("🔑 Token received");
+
 
 
 
@@ -91,7 +104,9 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
         console.log("👤 UserId:", userId);
+
 
 
 
@@ -105,6 +120,7 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
         users.push({
             userId,
             rooms: [],
@@ -114,7 +130,9 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
         console.log(`✅ User ${userId} connected. Total users: ${users.length}`);
+
 
 
 
@@ -122,6 +140,7 @@ wss.on('connection', function connection(ws, request) {
         ws.on('message', async function message(data) {
             try {
                 const parsedData = JSON.parse(data as unknown as string);
+
 
 
 
@@ -137,6 +156,7 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
                 if (parsedData.type === "leave_room") {
                     const user = users.find(x => x.ws === ws);
                     if (user) {
@@ -147,9 +167,11 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
                 if (parsedData.type === "chat") {
                     const roomSlug = parsedData.roomId;
                     const message = parsedData.message;
+
 
                     // Broadcast IMMEDIATELY - don't wait for database
                     users.forEach(user => {
@@ -161,6 +183,7 @@ wss.on('connection', function connection(ws, request) {
                             }));
                         }
                     });
+
 
                     // Save to database in background (non-blocking)
                     ;(async () => {
@@ -175,6 +198,7 @@ wss.on('connection', function connection(ws, request) {
                                 },
                             });
 
+
                             await prismaClient.chat.create({
                                 data: {
                                     roomId: room.id,
@@ -183,6 +207,7 @@ wss.on('connection', function connection(ws, request) {
                                     userId: userId,
                                 },
                             });
+
 
                             console.log(`[DB] Saved drawing to room '${roomSlug}' (ID: ${room.id})`);
                         } catch (e) {
@@ -193,12 +218,15 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
                 if (parsedData.type === "clear") {
                     const roomSlug = parsedData.roomId;
 
 
 
+
                     console.log(`[CLEAR] User ${userId} cleared room ${roomSlug}`);
+
 
 
                     users.forEach(user => {
@@ -209,7 +237,25 @@ wss.on('connection', function connection(ws, request) {
                             }));
                         }
                     });
+
+                    // Delete all chats for this room from database in background
+                    ;(async () => {
+                        try {
+                            const room = await prismaClient.room.findFirst({
+                                where: { slug: roomSlug }
+                            });
+                            if (room) {
+                                const deleted = await prismaClient.chat.deleteMany({
+                                    where: { roomId: room.id }
+                                });
+                                console.log(`[DB] Deleted ${deleted.count} chats from room '${roomSlug}'`);
+                            }
+                        } catch (e) {
+                            console.error("[DB] Failed to delete chats:", e);
+                        }
+                    })();
                 }
+
 
 
 
@@ -218,6 +264,7 @@ wss.on('connection', function connection(ws, request) {
                 console.error("Message parsing error:", e);
             }
         });
+
 
 
 
@@ -233,9 +280,11 @@ wss.on('connection', function connection(ws, request) {
 
 
 
+
         ws.on('error', function (e) {
             console.error("WebSocket error for user", userId, ":", e);
         });
+
 
 
 
@@ -245,6 +294,7 @@ wss.on('connection', function connection(ws, request) {
         ws.close(1011, "Server error");
     }
 });
+
 
 
 
