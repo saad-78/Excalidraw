@@ -44,30 +44,34 @@ export function Canvas({
         game?.setColor(selectedColor)
     }, [selectedColor, game])
 
+    // Ensure socket is OPEN before constructing Game, so Game.init() can fetch and render history reliably
     useEffect(() => {
-        if (canvasRef.current) {
-            const g = new Game(canvasRef.current, roomId, socket)
+        if (!canvasRef.current) return
+
+        let destroyed = false
+
+        const ensureOpen = () =>
+            new Promise<void>((resolve) => {
+                if (socket.readyState === WebSocket.OPEN) return resolve()
+                const onOpen = () => {
+                    socket.removeEventListener("open", onOpen)
+                    resolve()
+                }
+                socket.addEventListener("open", onOpen)
+            })
+
+        ;(async () => {
+            await ensureOpen()
+            if (destroyed) return
+            const g = new Game(canvasRef.current!, roomId, socket)
             g.setColor(selectedColor)
-            
-            console.log("🎨 Historical drawings to load:", historicalDrawings)
-            
-            // Load historical drawings
-            if (historicalDrawings.length > 0) {
-                historicalDrawings.forEach(shape => {
-                    console.log("Loading shape:", shape)
-                    g.existingShapes.push(shape)
-                })
-                g.clearCanvas()
-            }
-            fetch('http://localhost:3001/drawings/kim').then(r => r.json()).then(console.log)
-
             setGame(g)
+        })()
 
-            return () => {
-                g.destroy()
-            }
+        return () => {
+            destroyed = true
         }
-    }, [canvasRef])
+    }, [canvasRef, socket, roomId])
 
     const handleLogout = async () => {
         localStorage.removeItem("token")

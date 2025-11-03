@@ -4,7 +4,11 @@ import { JWT_SECRET } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
 
 
+
+
 const wss = new WebSocketServer({ port: 8080 });
+
+
 
 
 interface User {
@@ -14,7 +18,11 @@ interface User {
 }
 
 
+
+
 const users: User[] = [];
+
+
 
 
 function checkUser(token: string): string | null {
@@ -22,9 +30,13 @@ function checkUser(token: string): string | null {
         const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
 
+
+
         if (typeof decoded === "string" || !decoded || !decoded.userId) {
             return null;
         }
+
+
 
 
         return decoded.userId;
@@ -35,11 +47,17 @@ function checkUser(token: string): string | null {
 }
 
 
+
+
 wss.on('connection', function connection(ws, request) {
     const url = request.url;
 
 
+
+
     console.log("📡 New connection attempt");
+
+
 
 
     if (!url) {
@@ -49,7 +67,11 @@ wss.on('connection', function connection(ws, request) {
     }
 
 
+
+
     let userId: string | null = null;
+
+
 
 
     try {
@@ -57,13 +79,21 @@ wss.on('connection', function connection(ws, request) {
         const token = queryParams.get('token') || "";
 
 
+
+
         console.log("🔑 Token received");
+
+
 
 
         userId = checkUser(token);
 
 
+
+
         console.log("👤 UserId:", userId);
+
+
 
 
         if (userId === null) {
@@ -73,6 +103,8 @@ wss.on('connection', function connection(ws, request) {
         }
 
 
+
+
         users.push({
             userId,
             rooms: [],
@@ -80,12 +112,18 @@ wss.on('connection', function connection(ws, request) {
         });
 
 
+
+
         console.log(`✅ User ${userId} connected. Total users: ${users.length}`);
+
+
 
 
         ws.on('message', async function message(data) {
             try {
                 const parsedData = JSON.parse(data as unknown as string);
+
+
 
 
                 if (parsedData.type === "join_room") {
@@ -97,6 +135,8 @@ wss.on('connection', function connection(ws, request) {
                 }
 
 
+
+
                 if (parsedData.type === "leave_room") {
                     const user = users.find(x => x.ws === ws);
                     if (user) {
@@ -105,39 +145,15 @@ wss.on('connection', function connection(ws, request) {
                 }
 
 
+
+
                 if (parsedData.type === "chat") {
                     const roomSlug = parsedData.roomId;
                     const message = parsedData.message;
 
-                    console.log(`[DRAW] User ${userId} sent to room ${roomSlug}:`, message);
-
-                    try {
-                        const room = await prismaClient.room.findFirst({
-                            where: { slug: roomSlug }
-                        });
-                        if (room) {
-                            await prismaClient.chat.create({
-                                data: {
-                                    roomId: room.id,
-                                    message,
-                                    //@ts-ignore
-                                    userId
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.error("Database save error:", e);
-                    }
-
-                    const broadcastCount = users.filter(user => {
-                        const isInRoom = user.rooms.some(r => r.toString() === roomSlug.toString());
-                        return isInRoom;
-                    }).length;
-
-                    console.log(`Broadcasting to ${broadcastCount} users in room ${roomSlug}`);
-
+                    // Broadcast IMMEDIATELY - don't wait for database
                     users.forEach(user => {
-                        if (user.rooms.some(r => r.toString() === roomSlug.toString())) {
+                        if (user.rooms.some(r => r === roomSlug)) {
                             user.ws.send(JSON.stringify({
                                 type: "chat",
                                 message: message,
@@ -145,12 +161,45 @@ wss.on('connection', function connection(ws, request) {
                             }));
                         }
                     });
+
+                    // Save to database in background (non-blocking)
+                    ;(async () => {
+                        try {
+                            const room = await prismaClient.room.upsert({
+                                where: { slug: roomSlug },
+                                update: {},
+                                create: {
+                                    slug: roomSlug,
+                                    //@ts-ignore
+                                    adminId: userId,
+                                },
+                            });
+
+                            await prismaClient.chat.create({
+                                data: {
+                                    roomId: room.id,
+                                    message: message,
+                                    //@ts-ignore
+                                    userId: userId,
+                                },
+                            });
+
+                            console.log(`[DB] Saved drawing to room '${roomSlug}' (ID: ${room.id})`);
+                        } catch (e) {
+                            console.error("[DB] Failed to save drawing:", e);
+                        }
+                    })();
                 }
+
+
 
                 if (parsedData.type === "clear") {
                     const roomSlug = parsedData.roomId;
 
+
+
                     console.log(`[CLEAR] User ${userId} cleared room ${roomSlug}`);
+
 
                     users.forEach(user => {
                         if (user.rooms.some(r => r.toString() === roomSlug.toString())) {
@@ -163,10 +212,14 @@ wss.on('connection', function connection(ws, request) {
                 }
 
 
+
+
             } catch (e) {
                 console.error("Message parsing error:", e);
             }
         });
+
+
 
 
         ws.on('close', function () {
@@ -178,9 +231,13 @@ wss.on('connection', function connection(ws, request) {
         });
 
 
+
+
         ws.on('error', function (e) {
             console.error("WebSocket error for user", userId, ":", e);
         });
+
+
 
 
     } catch (e) {
@@ -188,6 +245,8 @@ wss.on('connection', function connection(ws, request) {
         ws.close(1011, "Server error");
     }
 });
+
+
 
 
 console.log("WebSocket server running on ws://localhost:8080");
