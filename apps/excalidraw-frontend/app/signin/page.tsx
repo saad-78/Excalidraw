@@ -59,7 +59,7 @@ export default function SigninPage() {
                         <div className="text-5xl font-bold mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                             Welcome Back
                         </div>
-                        <p className="text-slate-400 text-sm font-medium">Sign in to continue your conversations</p>
+                        <p className="text-slate-400 text-sm font-medium">Sign in to continue your crafting</p>
                     </div>
 
                     {error && (

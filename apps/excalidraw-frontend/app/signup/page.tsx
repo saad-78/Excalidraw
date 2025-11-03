@@ -49,22 +49,19 @@ export default function SignupPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Animated background elements */}
             <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
                 <div className="absolute -bottom-8 right-1/4 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
                 <div className="absolute top-1/2 right-1/3 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
             </div>
 
-            {/* Content */}
             <div className="w-full max-w-md relative z-10">
                 <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-3xl shadow-2xl p-8 hover:border-slate-700/50 transition-colors duration-300 animate-slideIn">
-                    {/* Header */}
                     <div className="mb-8 text-center">
                         <div className="text-5xl font-bold mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                             Create Account
                         </div>
-                        <p className="text-slate-400 text-sm font-medium">Join us today and start chatting instantly</p>
+                        <p className="text-slate-400 text-sm font-medium">Join us today and start crafting instantly</p>
                     </div>
 
                     {/* Error Message */}
