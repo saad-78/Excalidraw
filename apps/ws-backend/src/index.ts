@@ -4,13 +4,7 @@ import { JWT_SECRET } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
 
 
-
-
-
 const wss = new WebSocketServer({ port: 8080 });
-
-
-
 
 
 interface User {
@@ -20,14 +14,7 @@ interface User {
 }
 
 
-
-
-
 const users: User[] = [];
-
-
-
-
 
 function checkUser(token: string): string | null {
     try {
@@ -59,24 +46,13 @@ function checkUser(token: string): string | null {
 wss.on('connection', function connection(ws, request) {
     const url = request.url;
 
-
-
-
-
-    console.log("📡 New connection attempt");
-
-
-
-
+    console.log(" New connection attempt");
 
     if (!url) {
-        console.log("❌ No URL provided");
+        console.log("No URL provided");
         ws.close(1008, "No URL provided");
         return;
     }
-
-
-
 
 
     let userId: string | null = null;
@@ -89,26 +65,12 @@ wss.on('connection', function connection(ws, request) {
         const queryParams = new URLSearchParams(url.split("?")[1]);
         const token = queryParams.get('token') || "";
 
-
-
-
-
-        console.log("🔑 Token received");
-
-
-
-
+        console.log(" Token received");
 
         userId = checkUser(token);
 
 
-
-
-
-        console.log("👤 UserId:", userId);
-
-
-
+        console.log(" UserId:", userId);
 
 
         if (userId === null) {
@@ -118,9 +80,6 @@ wss.on('connection', function connection(ws, request) {
         }
 
 
-
-
-
         users.push({
             userId,
             rooms: [],
@@ -128,13 +87,7 @@ wss.on('connection', function connection(ws, request) {
         });
 
 
-
-
-
         console.log(`✅ User ${userId} connected. Total users: ${users.length}`);
-
-
-
 
 
         ws.on('message', async function message(data) {
@@ -173,7 +126,6 @@ wss.on('connection', function connection(ws, request) {
                     const message = parsedData.message;
 
 
-                    // Broadcast IMMEDIATELY - don't wait for database
                     users.forEach(user => {
                         if (user.rooms.some(r => r === roomSlug)) {
                             user.ws.send(JSON.stringify({
@@ -185,8 +137,7 @@ wss.on('connection', function connection(ws, request) {
                     });
 
 
-                    // Save to database in background (non-blocking)
-                    ;(async () => {
+                     (async () => {
                         try {
                             const room = await prismaClient.room.upsert({
                                 where: { slug: roomSlug },
@@ -238,8 +189,7 @@ wss.on('connection', function connection(ws, request) {
                         }
                     });
 
-                    // Delete all chats for this room from database in background
-                    ;(async () => {
+                    (async () => {
                         try {
                             const room = await prismaClient.room.findFirst({
                                 where: { slug: roomSlug }
