@@ -199,8 +199,8 @@ service: 'http-backend',
 timestamp: new Date().toISOString()
 })
 })
+//@ts-ignore
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`WS backend listening on ${PORT}`);
+});
 
-server.listen(PORT, () => {
-  console.log(`🚀 WebSocket server running on port ${PORT}`)
-  console.log(`✅ Keep-alive endpoint: http://localhost:${PORT}/api/keep-alive`)
-})
