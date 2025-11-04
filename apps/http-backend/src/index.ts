@@ -7,16 +7,11 @@ import { prismaClient } from "@repo/db/client";
 import { Prisma } from '@prisma/client'; 
 import cors from "cors";
 import bcrypt from "bcrypt";
+
 const app = express()
 
-app.use(cors({
-    origin: "http://localhost:3000",
-    credentials: true
-}));
-
+app.use(cors())
 app.use(express.json())
-
-
 
 app.post('/signup', async (req, res) => {
     const parsedData = CreateUserSchema.safeParse(req.body);
@@ -59,9 +54,6 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-
-
-
 app.post('/signin', async (req, res) => {
     const parsedData = SigninSchema.safeParse(req.body);
 
@@ -96,8 +88,6 @@ app.post('/signin', async (req, res) => {
         name: user.name 
     })
 })
-
-
 
 app.post('/room', middleware, async (req, res) => {
     const parsedData = RoomSchema.safeParse(req.body);
@@ -136,7 +126,6 @@ app.post('/room', middleware, async (req, res) => {
     }
 })
 
-
 app.get("/chats/:roomId",async(req,res)=>{
     const roomId = Number(req.params.roomId)
    const messages= await prismaClient.chat.findMany({
@@ -154,7 +143,6 @@ app.get("/chats/:roomId",async(req,res)=>{
     })
 })
 
-
 app.get("/room/:slug",async(req,res)=>{
     const slug = req.params.slug
    const room= await prismaClient.room.findFirst({
@@ -166,9 +154,6 @@ app.get("/room/:slug",async(req,res)=>{
         room
     })
 })
-
-
-
 
 app.get("/drawings/:roomId", async (req, res) => {
     try {
@@ -209,9 +194,6 @@ app.get("/drawings/:roomId", async (req, res) => {
     }
 });
 
-
-
-
 app.post("/drawings", async (req, res) => {
     try {
         const { roomId, message } = req.body;
@@ -243,12 +225,11 @@ app.post("/drawings", async (req, res) => {
     }
 });
 
+app.post('/api/keep-alive', (_req, res) => {
+  console.log('✅ HTTP Keep-alive ping received at', new Date().toISOString())
+  res.status(200).json({ status: 'alive', service: 'http-backend', timestamp: new Date() })
+})
 
+const PORT = process.env.PORT || 3001
 
-
-
-
-
-app.listen(3001, () => console.log('Server running on port 3001'))
-
-
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`))

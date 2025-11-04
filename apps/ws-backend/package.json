@@ -10,16 +10,17 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@repo/db": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
+    "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "ws": "^8.18.3",
-    "@repo/db":"workspace:*"
+    "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@repo/backend-common": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/ws": "^8.18.1",
-    "@repo/backend-common": "workspace:*"
+    "@types/ws": "^8.18.1"
   },
   "keywords": [],
   "author": "",
