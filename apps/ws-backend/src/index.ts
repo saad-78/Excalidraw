@@ -6,14 +6,19 @@ import { prismaClient } from "./db";
 import express from 'express'
 import http from 'http'
 
+
 const app = express()
 app.use(express.json())
 
-const PORT = process.env.PORT || 8080
+
+const PORT = process.env.PORT || 10000
+
 
 const server = http.createServer(app)
 
+
 const wss = new WebSocketServer({ server })
+
 
 interface User {
     ws: WebSocket;
@@ -21,15 +26,19 @@ interface User {
     userId: string;
 }
 
+
 const users: User[] = [];
+
 
 function checkUser(token: string): string | null {
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
+
         if (typeof decoded === "string" || !decoded || !decoded.userId) {
             return null;
         }
+
 
         return decoded.userId;
     } catch (e) {
@@ -38,28 +47,37 @@ function checkUser(token: string): string | null {
     }
 }
 
-wss.on('connection', function connection(ws, request) {
+
+wss.on('connection', function connection(ws: WebSocket, request: http.IncomingMessage) {
     const url = request.url;
+
 
     console.log("🔗 New connection attempt");
 
+
     if (!url) {
-        console.log(" No URL provided");
+        console.log("❌ No URL provided");
         ws.close(1008, "No URL provided");
         return;
     }
 
+
     let userId: string | null = null;
+
 
     try {
         const queryParams = new URLSearchParams(url.split("?")[1]);
         const token = queryParams.get('token') || "";
 
-        console.log(" Token received");
+
+        console.log("✓ Token received");
+
 
         userId = checkUser(token);
 
-        console.log(" UserId:", userId);
+
+        console.log("✓ UserId:", userId);
+
 
         if (userId === null) {
             console.log("❌ Unauthorized - Invalid token");
@@ -67,17 +85,21 @@ wss.on('connection', function connection(ws, request) {
             return;
         }
 
+
         users.push({
             userId,
             rooms: [],
             ws
         });
 
-        console.log(` User ${userId} connected. Total users: ${users.length}`);
 
-        ws.on('message', async function message(data) {
+        console.log(`✅ User ${userId} connected. Total users: ${users.length}`);
+
+//@ts-ignore
+        ws.on('message', async function message(data: WebSocket.RawData) {
             try {
                 const parsedData = JSON.parse(data as unknown as string);
+
 
                 if (parsedData.type === "join_room") {
                     const user = users.find(x => x.ws === ws);
@@ -87,6 +109,7 @@ wss.on('connection', function connection(ws, request) {
                     }
                 }
 
+
                 if (parsedData.type === "leave_room") {
                     const user = users.find(x => x.ws === ws);
                     if (user) {
@@ -94,9 +117,11 @@ wss.on('connection', function connection(ws, request) {
                     }
                 }
 
+
                 if (parsedData.type === "chat") {
                     const roomSlug = parsedData.roomId;
                     const message = parsedData.message;
+
 
                     users.forEach(user => {
                         if (user.rooms.some(r => r === roomSlug)) {
@@ -107,6 +132,7 @@ wss.on('connection', function connection(ws, request) {
                             }));
                         }
                     });
+
 
                     (async () => {
                         try {
@@ -120,6 +146,7 @@ wss.on('connection', function connection(ws, request) {
                                 },
                             });
 
+
                             await prismaClient.chat.create({
                                 data: {
                                     roomId: room.id,
@@ -129,6 +156,7 @@ wss.on('connection', function connection(ws, request) {
                                 },
                             });
 
+
                             console.log(` [DB] Saved drawing to room '${roomSlug}' (ID: ${room.id})`);
                         } catch (e) {
                             console.error(" [DB] Failed to save drawing:", e);
@@ -136,10 +164,13 @@ wss.on('connection', function connection(ws, request) {
                     })();
                 }
 
+
                 if (parsedData.type === "clear") {
                     const roomSlug = parsedData.roomId;
 
+
                     console.log(`🗑️ [CLEAR] User ${userId} cleared room ${roomSlug}`);
+
 
                     users.forEach(user => {
                         if (user.rooms.some(r => r.toString() === roomSlug.toString())) {
@@ -149,6 +180,7 @@ wss.on('connection', function connection(ws, request) {
                             }));
                         }
                     });
+
 
                     (async () => {
                         try {
@@ -167,10 +199,12 @@ wss.on('connection', function connection(ws, request) {
                     })();
                 }
 
+
             } catch (e) {
                 console.error(" Message parsing error:", e);
             }
         });
+
 
         ws.on('close', function () {
             const index = users.findIndex(u => u.ws === ws);
@@ -180,9 +214,11 @@ wss.on('connection', function connection(ws, request) {
             }
         });
 
-        ws.on('error', function (e) {
+
+        ws.on('error', function (e: Error) {
             console.error(" WebSocket error for user", userId, ":", e);
         });
+
 
     } catch (e) {
         console.error("❌ Connection error:", e);
@@ -192,15 +228,29 @@ wss.on('connection', function connection(ws, request) {
 
 //@ts-ignore
 
-app.all('/api/keep-alive', (_req, res) => {
-res.status(200).json({
-status: 'alive',
-service: 'http-backend',
-timestamp: new Date().toISOString()
-})
-})
-//@ts-ignore
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`WS backend listening on ${PORT}`);
+app.get('/health', (_req, res) => {
+    res.status(200).json({ ok: true });
 });
 
+//@ts-ignore
+
+app.all('/api/keep-alive', (_req, res) => {
+    res.status(200).json({
+        status: 'alive',
+        service: 'ws-backend',
+        timestamp: new Date().toISOString()
+    })
+})
+//@ts-ignore
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 WS backend listening on ${PORT}`);
+});
+
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, closing server...');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
