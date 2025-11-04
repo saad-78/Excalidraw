@@ -5,21 +5,10 @@
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node16",
-    "declaration": true,
-    "sourceMap": true,
-    "baseUrl": "./",
-    "paths": {
-      "@repo/db": ["../../../packages/db/src"],
-      "@repo/common": ["../../../packages/common/src"],
-      "@repo/backend-common": ["../../../packages/backend-common/src"],
-      "@repo/*": ["../../../packages/*/src"]
-    }
+    "moduleResolution": "node16"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

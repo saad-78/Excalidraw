@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { JWT_SECRET } from "@repo/backend-common/config";
+const JWT_SECRET = process.env.JWT_SECRET || "your-default-secret";
 import jwt, { JwtPayload } from "jsonwebtoken"
 
 export function middleware(req: Request, res: Response, next: NextFunction) {
