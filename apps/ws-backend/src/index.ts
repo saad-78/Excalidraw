@@ -1,7 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { JWT_SECRET } from "@repo/backend-common/config";
-import { prismaClient } from "@repo/db/client";
+const JWT_SECRET = process.env.JWT_SECRET || "123123"
+import { prismaClient } from "./db";
 //@ts-ignore
 import express from 'express'
 import http from 'http'
@@ -192,14 +192,12 @@ wss.on('connection', function connection(ws, request) {
 
 //@ts-ignore
 
-app.post('/api/keep-alive', (_req, res) => {
-  console.log('✅ Keep-alive ping received at', new Date().toISOString())
-  res.status(200).json({ 
-    status: 'alive', 
-    service: 'ws-backend', 
-    timestamp: new Date(),
-    connections: users.length
-  })
+app.all('/api/keep-alive', (_req, res) => {
+res.status(200).json({
+status: 'alive',
+service: 'http-backend',
+timestamp: new Date().toISOString()
+})
 })
 
 server.listen(PORT, () => {

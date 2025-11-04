@@ -15,7 +15,15 @@
     "@types/jsonwebtoken": "^9.0.10",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+     "@prisma/client": "^6.18.0",
+    "prisma": "^6.18.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "tsx": "^4.0.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@repo/backend-common": "workspace:*",
