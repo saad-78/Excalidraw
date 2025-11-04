@@ -1,6 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-const { JWT_SECRET } = require("@repo/backend-common/config");
+const JWT_SECRET = process.env.JWT_SECRET || "123123"
 import { middleware } from "./middleware";
 import { CreateUserSchema, SigninSchema, RoomSchema } from '@repo/common/types';
 import { prismaClient } from "@repo/db/client";
