@@ -226,9 +226,12 @@ app.post("/drawings", async (req, res) => {
     }
 });
 
-app.post('/api/keep-alive', (_req, res) => {
-  console.log('✅ HTTP Keep-alive ping received at', new Date().toISOString())
-  res.status(200).json({ status: 'alive', service: 'http-backend', timestamp: new Date() })
+app.all('/api/keep-alive', (_req, res) => {
+res.status(200).json({
+status: 'alive',
+service: 'http-backend',
+timestamp: new Date().toISOString()
+})
 })
 
 const PORT = process.env.PORT || 3001
