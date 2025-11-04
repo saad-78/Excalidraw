@@ -41,8 +41,8 @@ app.post('/signup', async (req, res) => {
             userId: user.id,
             token  
         });
-    } catch (e) {
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+    } catch (e: any) {
+        if (e.code === 'P2002') {
             return res.status(409).json({
                 message: "User already exists"
             });
@@ -111,8 +111,8 @@ app.post('/room', middleware, async (req, res) => {
         return res.status(201).json({
             roomId: room.id
         })
-    } catch (e) {
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+    } catch (e: any) {
+        if (e.code === 'P2002') {
             return res.status(409).json({
                 message: "Room with that name already exists"
             })
